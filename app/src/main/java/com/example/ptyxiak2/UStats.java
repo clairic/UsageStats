@@ -61,7 +61,7 @@ public class UStats {
         UsageStatsManager usm = getUsageStatsManager(context);
         Calendar calendar = Calendar.getInstance();
         long endTime = calendar.getTimeInMillis();
-        calendar.add(Calendar.YEAR, -1);
+        calendar.add(Calendar.MONTH, -1);
         long startTime = calendar.getTimeInMillis();
 
         Log.d(TAG, "Range start:" + dateFormat.format(startTime));
@@ -77,13 +77,24 @@ public class UStats {
                 // Get the app's usage events
                 List<UsageEvents.Event> appEvents = getAppUsageEvents(context, u.getPackageName());
 
-                // Print specific timestamps for each app opening and closing event
+                // Initialize variables to track the last event time and calculate duration
+                long lastEventTime = 0;
+
+                // Iterate through events and filter for the specified app
                 for (UsageEvents.Event event : appEvents) {
-                    if (event.getEventType() == UsageEvents.Event.ACTIVITY_RESUMED ||
-                            event.getEventType() == UsageEvents.Event.ACTIVITY_PAUSED) {
-                        Log.d(TAG, "App: " + getAppDisplayName(event.getPackageName()) + "\t" +
+                    if (event.getEventType() == UsageEvents.Event.ACTIVITY_RESUMED) {
+                        lastEventTime = event.getTimeStamp();
+                        Log.d(TAG, "App: " + getAppDisplayName(u.getPackageName()) + "\t" +
                                 "Timestamp: " + dateFormat.format(event.getTimeStamp()) +
                                 "\tEvent Type: " + getEventTypeLabel(event.getEventType()));
+                    } else if (event.getEventType() == UsageEvents.Event.ACTIVITY_PAUSED) {
+                        // Calculate the duration between opening and closing the app
+                        long duration = event.getTimeStamp() - lastEventTime;
+
+                        Log.d(TAG, "App: " + getAppDisplayName(u.getPackageName()) + "\t" +
+                                "Timestamp: " + dateFormat.format(event.getTimeStamp()) +
+                                "\tEvent Type: " + getEventTypeLabel(event.getEventType()) +
+                                "\tDuration: " + formatDuration(duration));
                     }
                 }
             }
@@ -143,5 +154,14 @@ public class UStats {
 
         // Get the label for the given event type
         return eventTypeLabels.getOrDefault(eventType, String.valueOf(eventType));
+    }
+
+    private static String formatDuration(long duration) {
+        // Convert duration to hours, minutes, and seconds
+        long hours = (duration / (1000 * 60 * 60)) % 24;
+        long minutes = (duration / (1000 * 60)) % 60;
+        long seconds = (duration / 1000) % 60;
+
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 }
