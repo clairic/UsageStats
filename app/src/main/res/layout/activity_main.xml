@@ -7,9 +7,10 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:layout_width="76dp"
-        android:layout_height="17dp"
-        android:text="@string/hello_world"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="App Usage Stats demo"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
         app:layout_constraintBottom_toTopOf="@+id/stats_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

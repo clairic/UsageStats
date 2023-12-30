@@ -19,42 +19,19 @@ import java.util.List;
 import java.util.Map;
 
 public class UStats {
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("M-d-yyyy HH:mm:ss");
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("d-M-yyyy HH:mm:ss");
     public static final String TAG = UStats.class.getSimpleName();
 
     // Map package names to display names
     private static final Map<String, String> appDisplayNameMap = new HashMap<>();
 
+    //This is used to replace the package name with the app's name in the logfile
     static {
         appDisplayNameMap.put("com.instagram.android", "Instagram");
         appDisplayNameMap.put("com.facebook.katana", "Facebook");
-        // Add more mappings as needed
-    }
-
-    @SuppressWarnings("ResourceType")
-    public static void getStats(Context context) {
-        UsageStatsManager usm = (UsageStatsManager) context.getSystemService("usagestats");
-        int interval = UsageStatsManager.INTERVAL_YEARLY;
-        Calendar calendar = Calendar.getInstance();
-        long endTime = calendar.getTimeInMillis();
-        calendar.add(Calendar.YEAR, -1);
-        long startTime = calendar.getTimeInMillis();
-
-        Log.d(TAG, "Range start:" + dateFormat.format(startTime));
-        Log.d(TAG, "Range end:" + dateFormat.format(endTime));
-
-        UsageEvents uEvents = usm.queryEvents(startTime, endTime);
-        while (uEvents.hasNextEvent()) {
-            UsageEvents.Event e = new UsageEvents.Event();
-            uEvents.getNextEvent(e);
-
-            if (e != null && (e.getEventType() == UsageEvents.Event.ACTIVITY_RESUMED ||
-                    e.getEventType() == UsageEvents.Event.ACTIVITY_PAUSED)) {
-                Log.d(TAG, "App: " + getAppDisplayName(e.getPackageName()) + "\t" +
-                        "Timestamp: " + dateFormat.format(e.getTimeStamp()) +
-                        "\tEvent Type: " + getEventTypeLabel(e.getEventType()));
-            }
-        }
+        appDisplayNameMap.put("com.zhiliaoapp.musically", "TikTok");
+        appDisplayNameMap.put("com.linkedin.android", "LinkedIn");
+        appDisplayNameMap.put("com.facebook.orca", "Messenger");
     }
 
     public static List<UsageStats> getUsageStatsList(Context context) {
@@ -91,19 +68,23 @@ public class UStats {
                         // Calculate the duration between opening and closing the app
                         long duration = event.getTimeStamp() - lastEventTime;
 
-                        Log.d(TAG, "App: " + getAppDisplayName(u.getPackageName()) + "\t" +
-                                "Timestamp: " + dateFormat.format(event.getTimeStamp()) +
-                                "\tEvent Type: " + getEventTypeLabel(event.getEventType()) +
-                                "\tDuration: " + formatDuration(duration));
+                        if (!formatDuration(duration).equals("00:00:00")) {
+                            Log.d(TAG, "App: " + getAppDisplayName(u.getPackageName()) + "\t" +
+                                    "Timestamp: " + dateFormat.format(event.getTimeStamp()) +
+                                    "\tEvent Type: " + getEventTypeLabel(event.getEventType()) +
+                                    "\tDuration: " + formatDuration(duration));
+                        }
                     }
                 }
             }
         }
     }
 
+    //this prints the list of the apps that we are tracking
     public static void printCurrentUsageStatus(Context context) {
         // Define the list of tracked apps (Instagram and Facebook)
-        List<String> trackedApps = Arrays.asList("com.instagram.android", "com.facebook.katana");
+        List<String> trackedApps = Arrays.asList("com.instagram.android", "com.facebook.katana", "com.zhiliaoapp.musically",
+                "com.linkedin.android", "com.facebook.orca");
 
         // Get the usage stats and print for tracked apps
         printUsageStats(context, getUsageStatsList(context), trackedApps);
@@ -161,6 +142,11 @@ public class UStats {
         long hours = (duration / (1000 * 60 * 60)) % 24;
         long minutes = (duration / (1000 * 60)) % 60;
         long seconds = (duration / 1000) % 60;
+
+        while (hours==0 && minutes==0 && seconds==0) {
+            return String.format("00:00:00");
+        }
+
 
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
