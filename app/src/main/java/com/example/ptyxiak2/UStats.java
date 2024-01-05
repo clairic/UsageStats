@@ -34,6 +34,9 @@ public class UStats {
         appDisplayNameMap.put("com.facebook.orca", "Messenger");
     }
 
+    // Directory to store CSV files
+    private static final String CSV_DIRECTORY_PATH = Environment.getExternalStorageDirectory().getPath() + "/Documents/csv-files";
+
     public static List<UsageStats> getUsageStatsList(Context context) {
         UsageStatsManager usm = getUsageStatsManager(context);
         Calendar calendar = Calendar.getInstance();
@@ -64,6 +67,9 @@ public class UStats {
                         Log.d(TAG, "App: " + getAppDisplayName(u.getPackageName()) + "\t" +
                                 "Timestamp: " + dateFormat.format(event.getTimeStamp()) +
                                 "\tEvent Type: " + getEventTypeLabel(event.getEventType()));
+
+                        // Write to CSV file
+                        writeToFile(u.getPackageName(), event.getTimeStamp(), 0); // Duration is initially 0
                     } else if (event.getEventType() == UsageEvents.Event.ACTIVITY_PAUSED) {
                         // Calculate the duration between opening and closing the app
                         long duration = event.getTimeStamp() - lastEventTime;
@@ -73,10 +79,43 @@ public class UStats {
                                     "Timestamp: " + dateFormat.format(event.getTimeStamp()) +
                                     "\tEvent Type: " + getEventTypeLabel(event.getEventType()) +
                                     "\tDuration: " + formatDuration(duration));
+
+                            // Write to CSV file
+                            writeToFile(u.getPackageName(), event.getTimeStamp(), duration);
                         }
                     }
                 }
             }
+        }
+    }
+
+    // This method writes data to a CSV file
+    private static void writeToFile(String appName, long timeStamp, long duration) {
+        try {
+            File csvDirectory = new File(CSV_DIRECTORY_PATH);
+            if (!csvDirectory.exists()) {
+                csvDirectory.mkdirs();
+            }
+
+            String fileName = appName + ".csv";
+            File csvFile = new File(csvDirectory, fileName);
+
+            boolean isNewFile = !csvFile.exists();
+
+            FileWriter writer = new FileWriter(csvFile, true); // true for append mode
+
+            if (isNewFile) {
+                // Write header if the file is new
+                writer.append("Timestamp,Duration\n");
+            }
+
+            // Write data
+            writer.append(dateFormat.format(timeStamp)).append(",").append(formatDuration(duration)).append("\n");
+
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
